@@ -6181,6 +6181,7 @@ dependencies = [
  "polkadot-node-primitives",
  "polkadot-node-subsystem-test-helpers",
  "polkadot-primitives",
+ "polkadot-procmacro-subsystem-dispatch-gen",
  "polkadot-statement-table",
  "sc-network",
  "smallvec 1.6.1",
@@ -6258,8 +6259,8 @@ dependencies = [
  "polkadot-node-primitives",
  "polkadot-node-subsystem",
  "polkadot-node-subsystem-util",
- "polkadot-overseer-gen",
  "polkadot-primitives",
+ "polkadot-procmacro-overseer-subsystems-gen",
  "sc-client-api",
  "sp-api",
  "sp-core",
@@ -6270,10 +6271,12 @@ dependencies = [
 name = "polkadot-overseer-gen"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "futures 0.3.14",
  "metered-channel",
  "polkadot-overseer-gen-proc-macro",
  "sp-core",
+ "thiserror",
  "tracing",
  "trybuild",
 ]
@@ -6332,6 +6335,28 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "thiserror",
+]
+
+[[package]]
+name = "polkadot-procmacro-overseer-subsystems-gen"
+version = "0.1.0"
+dependencies = [
+ "assert_matches",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "trybuild",
+]
+
+[[package]]
+name = "polkadot-procmacro-subsystem-dispatch-gen"
+version = "0.1.0"
+dependencies = [
+ "assert_matches",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "trybuild",
 ]
 
 [[package]]

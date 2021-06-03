@@ -4,15 +4,13 @@ Polkadot Release Process
 ### Branches
 * release-candidate branch: The branch used for staging of the next release.
   Named like `release-v0.8.26`
-* release branch: The branch to which successful release-candidates are merged
-  and tagged with the new version. Named literally `release`.
 
 ### Notes
 * The release-candidate branch *must* be made in the paritytech/polkadot repo in
 order for release automation to work correctly
-* Any new pushes/merges to the release-candidate branch (for example,
-refs/heads/release-v0.8.26) will result in the rc index being bumped (e.g., v0.8.26-rc1
-to v0.8.26-rc2) and new wasms built.
+* Any new pushes/merges to the release-candidate branch after the initial `rc-1`
+  (for example, refs/heads/release-v0.8.26) will result in the rc index being
+  bumped (e.g., v0.8.26-rc1 to v0.8.26-rc2) and new wasms built.
 
 ### Release workflow
 
@@ -38,12 +36,10 @@ automated and require no human action.
   candidate
   4. Depending on the cherry-picked changes, it may be necessary to perform some
   or all of the manual tests again.
-7. Once happy with the release-candidate, perform the release using the release
-  script located at `scripts/release.sh` (or perform the steps in that script
-  manually):
-  - `./scripts/release.sh v0.8.26`
-8. NOACTION: The HEAD of the `release` branch will be tagged with `v0.8.26`,
-  and a final draft release will be created on Github.
+7. Once happy with the release-candidate, tag the head of the release-candidate
+  branch: `git tag -s -m 'v0.8.26' v0.8.26; git push --tags`. This will create
+  a draft release much like the release-candidates.
+  TODO: Add cleanroom explanation here
 
 ### Security releases
 

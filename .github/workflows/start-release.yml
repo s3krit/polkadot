@@ -47,8 +47,8 @@ jobs:
           fetch-depth: 0
           path: grandpa-bridge-gadget
           repository: ${{ github.repository_owner }}/grandpa-bridge-gadget
-            - name: Stable with rustfmt and clippy
-      - uses: actions-rs/toolchain@v1
+      - name: Stable with rustfmt and clippy
+        uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable

@@ -1,0 +1,69 @@
+name: Release process initialisation
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version string, like v1.2.3'
+        required: true
+jobs:
+  create_issue:
+    runs-on: ubuntu-latest
+    steps:
+      - id: create-issue
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        with:
+          filename: .github/ISSUE_TEMPLATE/release.md
+      - uses: s3krit/matrix-message-action@v0.0.2
+        if: steps.create-issue.outputs.url != ''
+        with:
+          room_id: ${{ secrets.INTERNAL_POLKADOT_MATRIX_ROOM_ID }}
+          access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
+          server: "matrix.parity.io"
+          message: "Release process for polkadot ${{ steps.compute_tag.outputs.version }} has been started. Tracking issue: ${{ steps.create-issue.outputs.url }}"
+
+  # In this job we want to:
+  # * Create a branch in polkadot called 'release-$VERSION
+  # * Create a branch in beefy + substrate called 'polkadot-$VERSION'
+  # * Use Diener to switch beefy + polkadot to new substrate branch
+  # * Use Diener to switch polkadot to new beefy branch
+  create_branches:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          path: polkadot
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          path: substrate
+          repository: ${{ github.repository_owner }}/substrate
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          path: grandpa-bridge-gadget
+          repository: ${{ github.repository_owner }}/grandpa-bridge-gadget
+      - name: Stable with rustfmt and clippy
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - name: Install diener
+        uses: actions-rs/cargo@v1
+        with:
+          command: install diener
+      - name: Configure git
+        run: |
+          git config --global user.name 'Release bot'
+          git config --global user.email 'null@example.com'
+      - name: Create and push substrate branch
+        env:
+          VERSION: ${{ github.events.input.version }}
+        run: |
+          cd substrate
+          git checkout -b "polkadot-$VERSION"
+          git push --set-upstream origin "polkadot-$VERSION"

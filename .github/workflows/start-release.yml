@@ -33,6 +33,7 @@ jobs:
   # * Use Diener to switch polkadot to new beefy branch
   create_branches:
     runs-on: ubuntu-latest
+    environment: test
     steps:
       - uses: actions/checkout@v2
         with:
@@ -64,7 +65,7 @@ jobs:
           git config --global user.email 'null@example.com'
       - name: Create and push substrate branch
         env:
-          VERSION: ${{ github.events.input.version }}
+          VERSION: ${{ github.event.inputs.version }}
           PUSH_TOKEN: ${{ secrets.RELEASE_BRANCH_TOKEN }}
           PUSH_USER: ${{ secrets.RELEASE_BRANCH_USER }}
         run: |

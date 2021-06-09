@@ -10,6 +10,7 @@ jobs:
   create_issue:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - id: create-issue
         uses: JasonEtco/create-an-issue@v2
         env:
@@ -55,7 +56,8 @@ jobs:
       - name: Install diener
         uses: actions-rs/cargo@v1
         with:
-          command: install diener
+          command: install
+          args: diener
       - name: Configure git
         run: |
           git config --global user.name 'Release bot'

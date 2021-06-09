@@ -10,6 +10,7 @@ jobs:
   create_issue:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - id: create-issue
         uses: JasonEtco/create-an-issue@v2
         env:
@@ -23,7 +24,7 @@ jobs:
           room_id: ${{ secrets.INTERNAL_POLKADOT_MATRIX_ROOM_ID }}
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
           server: "matrix.parity.io"
-          message: "Release process for polkadot ${{ steps.compute_tag.outputs.version }} has been started. Tracking issue: ${{ steps.create-issue.outputs.url }}"
+          message: "Release process for polkadot ${{ github.event.inputs.version }} has been started. Tracking issue: ${{ steps.create-issue.outputs.url }}"
 
   # In this job we want to:
   # * Create a branch in polkadot called 'release-$VERSION
@@ -32,6 +33,7 @@ jobs:
   # * Use Diener to switch polkadot to new beefy branch
   create_branches:
     runs-on: ubuntu-latest
+    environment: test
     steps:
       - uses: actions/checkout@v2
         with:
@@ -55,15 +57,57 @@ jobs:
       - name: Install diener
         uses: actions-rs/cargo@v1
         with:
-          command: install diener
-      - name: Configure git
+          command: install
+          args: diener
+      - name: Get Beefy & Substrate commits
+        id: commits
         run: |
-          git config --global user.name 'Release bot'
-          git config --global user.email 'null@example.com'
+          SUBSTRATE_COMMIT=$(grep 'paritytech/substrate' Cargo.lock | uniq | head -n1  | grep -oE '[a-f0-9]{40}')
+          BEEFY_COMMIT=$(grep 'paritytech/grandpa-bridge-gadget' Cargo.lock | uniq | head -n1  | grep -oE '[a-f0-9]{40}')
+          echo "::set-output name=substrate_commit::${SUBSTRATE_COMMIT}"
+          echo "::set-output name=beefy_commit::${BEEFY_COMMIT}"
+      - name: Configure git
+        env:
+          GIT_USER: ${{ secrets.RELEASE_BRANCH_USER }}
+          GIT_EMAIL: ${{ secrets.RELEASE_BRANCH_EMAIL }}
+        run: |
+          git config --global user.name "$GIT_USER"
+          git config --global user.email "$GIT_EMAIL"
       - name: Create and push substrate branch
         env:
-          VERSION: ${{ github.events.input.version }}
+          VERSION: ${{ github.event.inputs.version }}
+          PUSH_TOKEN: ${{ secrets.RELEASE_BRANCH_TOKEN }}
+          PUSH_USER: ${{ secrets.RELEASE_BRANCH_USER }}
+          SUBSTRATE_COMMIT: ${{ steps.commits.outputs.substrate_commit }}
         run: |
           cd substrate
+          git checkout "$SUBSTRATE_COMMIT"
           git checkout -b "polkadot-$VERSION"
-          git push --set-upstream origin "polkadot-$VERSION"
+          git push "https://s3krit:${PUSH_TOKEN}@github.com/s3krit/substrate.git" "polkadot-$VERSION"
+      - name: Create and push beefy branch
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          PUSH_TOKEN: ${{ secrets.RELEASE_BRANCH_TOKEN }}
+          PUSH_USER: ${{ secrets.RELEASE_BRANCH_USER }}
+          BEEFY_COMMIT: ${{ steps.commits.outputs.beefy_commit }}
+        run: |
+          cd grandpa-bridge-gadget
+          git checkout "$BEEFY_COMMIT"
+          git checkout -b "polkadot-$VERSION"
+          diener update --branch "polkadot-$VERSION" --substrate
+          cargo check
+          git add .; git commit -m "update substrate to polkadot-$VERSION"
+          git push "https://s3krit:${PUSH_TOKEN}@github.com/s3krit/grandpa-bridge-gadget.git" "polkadot-$VERSION"
+      - name: Create and push polkadot branch
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          PUSH_TOKEN: ${{ secrets.RELEASE_BRANCH_TOKEN }}
+          PUSH_USER: ${{ secrets.RELEASE_BRANCH_USER }}
+        run: |
+          cd polkadot
+          git checkout -b "release-$VERSION"
+          diener update --branch "polkadot-$VERSION" --substrate
+          diener update --branch "polkadot-$VERSION" --beefy
+          cargo check
+          git add .; git commit -m "update substrate + beefy to polkadot-$VERSION"
+          git push "https://${PUSH_USER}:${PUSH_TOKEN}@github.com/s3krit/substrate.git" "polkadot-$VERSION"

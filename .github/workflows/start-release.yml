@@ -24,7 +24,7 @@ jobs:
           room_id: ${{ secrets.INTERNAL_POLKADOT_MATRIX_ROOM_ID }}
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
           server: "matrix.parity.io"
-          message: "Release process for polkadot ${{ steps.compute_tag.outputs.version }} has been started. Tracking issue: ${{ steps.create-issue.outputs.url }}"
+          message: "Release process for polkadot ${{ github.event.inputs.version }} has been started. Tracking issue: ${{ steps.create-issue.outputs.url }}"
 
   # In this job we want to:
   # * Create a branch in polkadot called 'release-$VERSION
@@ -65,7 +65,9 @@ jobs:
       - name: Create and push substrate branch
         env:
           VERSION: ${{ github.events.input.version }}
+          PUSH_TOKEN: ${{ secrets.RELEASE_BRANCH_TOKEN }}
+          PUSH_USER: ${{ secrets.RELEASE_BRANCH_USER }}
         run: |
           cd substrate
           git checkout -b "polkadot-$VERSION"
-          git push --set-upstream origin "polkadot-$VERSION"
+          git push "https://${PUSH_USER}:${PUSH_TOKEN}@github.com/s3krit/substrate.git" "polkadot-$VERSION"
